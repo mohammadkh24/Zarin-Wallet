@@ -27,5 +27,7 @@ export enum AuthMessage {
   }
 
 export enum userMessages {
-    USER_NOT_FOUND = 'کاربر یافت نشد'
+    USER_NOT_FOUND = 'کاربر یافت نشد',
+    USER_ROLE_CHANGED = 'نقش کاربر با موفقیت آپدیت شد',
+    USER_REMOVED = 'کاربر با موفقیت حذف شد'
 }

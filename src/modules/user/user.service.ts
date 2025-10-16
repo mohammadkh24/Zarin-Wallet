@@ -6,6 +6,8 @@ import { UserEntity } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { throwError } from 'rxjs';
 import { CreateDepositDto } from '../wallet/dto/create-wallet.dto';
+import { UserRole } from './types/types';
+import { userMessages } from 'src/common/enums/messages';
 
 @Injectable()
 export class UserService {
@@ -13,6 +15,8 @@ export class UserService {
     @InjectRepository(UserEntity)
     private userRepository: Repository<UserEntity>,
   ) {}
+
+  async getAll() {}
 
   async findOne(id: number) {
     const user = await this.userRepository.findOneBy({ id });
@@ -22,8 +26,36 @@ export class UserService {
     return user;
   }
 
-  async findOrCreateUser({ mobile  }: { mobile: string }) {
-    let user = await this.userRepository.findOne({ where: { mobile  } });
+  async changeRole(id: number, role: UserRole) {
+    const user = await this.userRepository.findOneBy({ id });
+
+    if (!user) {
+      throw new NotFoundException(userMessages.USER_NOT_FOUND)
+    }
+
+    user.role = role
+    await this.userRepository.save(user)
+
+    return {
+      message : userMessages.USER_ROLE_CHANGED
+    }
+  }
+
+  async removeUser(id : number) {
+    const user = await this.userRepository.findOneBy({id})
+
+    if (!user) {
+      throw new NotFoundException(userMessages.USER_NOT_FOUND)
+    }
+
+    await this.userRepository.delete(id)
+    return {
+      message : userMessages.USER_REMOVED
+    }
+  }
+
+  async findOrCreateUser({ mobile }: { mobile: string }) {
+    let user = await this.userRepository.findOne({ where: { mobile } });
 
     if (!user) {
       throw new NotFoundException('کاربر پیدا نشد');

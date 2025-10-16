@@ -50,7 +50,7 @@ export class AuthService {
     }
 
     await this.createOtpForUser(user);
-    return { message: AuthMessage.OTP_SENT };
+    return { message: AuthMessage.OTP_SENT};
   }
 
   // بررسی OTP
