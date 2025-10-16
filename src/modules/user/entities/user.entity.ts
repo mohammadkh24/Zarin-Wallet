@@ -6,28 +6,25 @@ import {
   JoinColumn,
   OneToMany,
   OneToOne,
+  PrimaryColumn,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { UserRole } from '../types/types';
+
+import type { UserToken } from '../types/types';
 import { OTPEntity } from './otp.entity';
 
 @Entity('user')
 export class UserEntity {
-  @PrimaryGeneratedColumn('increment')
+  @PrimaryColumn()
   id: number;
 
-  @Column()
+  @Column({nullable : true})
   fullname: string;
 
   @Column({ type: 'varchar', nullable: true })
-  email?: string | null;
-
-  @Column({ type: 'varchar', nullable: true })
   mobile: string | null;
-
-  @Column({ type: 'enum', enum: ['phone', 'email'], nullable: true })
-  type: 'phone' | 'email';
 
   @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
   role: UserRole;
@@ -38,8 +35,8 @@ export class UserEntity {
   @OneToMany(() => Wallet, (wallet) => wallet.user)
   transactions: Wallet[];
 
-  @Column({ default: false })
-  emailVerify: boolean;
+  @Column('json', { nullable: true })
+  token?: UserToken;
 
   @Column({ default: false })
   mobileVerify: boolean;

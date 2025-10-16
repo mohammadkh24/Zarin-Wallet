@@ -10,7 +10,8 @@ import { CreateDepositDto } from '../wallet/dto/create-wallet.dto';
 @Injectable()
 export class UserService {
   constructor(
-    @InjectRepository(UserEntity) private userRepository: Repository<UserEntity>,
+    @InjectRepository(UserEntity)
+    private userRepository: Repository<UserEntity>,
   ) {}
 
   async findOne(id: number) {
@@ -21,18 +22,11 @@ export class UserService {
     return user;
   }
 
-  async findOrCreateUser({
-    mobile,
-    fullname,
-  }: {
-    mobile: string;
-    fullname: string;
-  }) {
-    let user = await this.userRepository.findOne({ where: { mobile } });
+  async findOrCreateUser({ mobile  }: { mobile: string }) {
+    let user = await this.userRepository.findOne({ where: { mobile  } });
 
     if (!user) {
-      user = this.userRepository.create({ mobile, fullname, balance: 0 });
-      await this.userRepository.save(user);
+      throw new NotFoundException('کاربر پیدا نشد');
     }
 
     return user;

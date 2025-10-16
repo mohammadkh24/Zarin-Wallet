@@ -13,7 +13,7 @@ import { UserService } from '../user/user.service';
 import { CreateDepositDto } from './dto/create-wallet.dto';
 import { CreateWithdreawDto } from './dto/withdraw-dto';
 import { ZarinpalService } from 'src/common/utils/zarinpal.util';
-import { userMessages, walletMessage } from 'src/enums/messages';
+import { userMessages, walletMessage } from 'src/common/enums/messages';
 
 @Injectable()
 export class WalletService {
@@ -24,16 +24,16 @@ export class WalletService {
     private zarinpal: ZarinpalService,
   ) {}
 
+
   async deposit(depositDto: CreateDepositDto) {
    try {
-    const { mobile, fullname, amount } = depositDto;
-    const user = await this.userService.findOrCreateUser({ mobile, fullname });
+    const { mobile, amount } = depositDto;
+    const user = await this.userService.findOrCreateUser({ mobile });
     const invoiceNumber = Math.floor(1000 + Math.random() * 9000).toString(); 
 
 
     const { authority, url } = await this.zarinpal.requestPayment({
       amount,
-      description: `شارژ کیف پول برای ${fullname}`,
       metadata: { mobile },
     });
 
@@ -120,9 +120,9 @@ export class WalletService {
   }
 
   async withdraw(withdrawDto: CreateWithdreawDto) {
-    const { mobile, fullname, amount } = withdrawDto;
+    const { mobile, amount } = withdrawDto;
 
-    const user = await this.userService.findOrCreateUser({ mobile, fullname });
+    const user = await this.userService.findOrCreateUser({ mobile });
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
