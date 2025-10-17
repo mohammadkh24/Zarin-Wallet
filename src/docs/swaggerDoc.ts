@@ -5,7 +5,7 @@ export const swaggerDocument = {
     version: '2.1.0',
     description: 'Zarin Wallet - Payment System',
   },
-  servers: [{ url: 'http://localhost:3000/' }],
+  servers: [{ url: 'https://zarin-wallet.onrender.com/docs' }],
   tags: [
     {
       name: 'Auth',
