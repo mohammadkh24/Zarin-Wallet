@@ -18,6 +18,7 @@ export class TypeOrmDbConfig implements TypeOrmOptionsFactory {
       ssl: {
         rejectUnauthorized: false,
       },
+      
       // entities: [
       //   'dist/**/**/**/*.entity{.ts,.js}',
       //   'dist/**/**/*.entity{.ts,.js}',
