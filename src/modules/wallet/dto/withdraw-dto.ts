@@ -1,4 +1,6 @@
+import { IsNumber } from "class-validator";
+
 export class CreateWithdreawDto {
-    mobile : string
+    @IsNumber()
     amount : number
 }

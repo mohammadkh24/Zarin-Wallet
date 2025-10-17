@@ -2,6 +2,7 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  UseGuards,
 } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
@@ -13,116 +14,126 @@ import { UserService } from '../user/user.service';
 import { CreateDepositDto } from './dto/create-wallet.dto';
 import { CreateWithdreawDto } from './dto/withdraw-dto';
 import { ZarinpalService } from 'src/common/utils/zarinpal.util';
-import { userMessages, walletMessage } from 'src/common/enums/messages';
+import {
+  ServerMessage,
+  userMessages,
+  walletMessage,
+} from 'src/common/enums/messages';
+import { throwError } from 'rxjs';
+import { authGuard } from 'src/common/guards/auth.guard';
 
 @Injectable()
 export class WalletService {
   constructor(
     @InjectRepository(Wallet) private walletRepo: Repository<Wallet>,
     private userService: UserService,
+    @InjectRepository(UserEntity) private userRepo: Repository<UserEntity>,
     @InjectDataSource() private dataSource: DataSource,
     private zarinpal: ZarinpalService,
   ) {}
 
+  async deposit(depositDto: CreateDepositDto , userId : number) {
+    try {
+      const {  amount } = depositDto;
+      const user = await this.userRepo.findOne({where : {id : userId}});
+      const invoiceNumber = Math.floor(1000 + Math.random() * 9000).toString();
 
-  async deposit(depositDto: CreateDepositDto) {
-   try {
-    const { mobile, amount } = depositDto;
-    const user = await this.userService.findOrCreateUser({ mobile });
-    const invoiceNumber = Math.floor(1000 + Math.random() * 9000).toString(); 
-
-
-    const { authority, url } = await this.zarinpal.requestPayment({
-      amount,
-      metadata: { mobile },
-    });
-
-    await this.walletRepo.save({
-      amount,
-      type: walletType.Deposit,
-      userId: user.id,
-      invoice_number:invoiceNumber,
-      isPaid: false,
-      authority
-    });
-
-    return { url, authority  };
-   } catch (error) {
-    console.log(error);
-    throw new BadRequestException(error)
+      if (!user) throw new NotFoundException(userMessages.USER_NOT_FOUND)
+        
     
-   }
+
+      const { authority, url } = await this.zarinpal.requestPayment({
+        amount,
+        metadata: { mobile : user?.mobile },
+      });
+
+      await this.walletRepo.save({
+        amount,
+        type: walletType.Deposit,
+        userId: user.id,
+        invoice_number: invoiceNumber,
+        isPaid: false,
+        authority,
+      });
+
+      return { url, authority };
+    } catch (error) {
+      console.log(error);
+      throw new BadRequestException(error);
+    }
   }
 
   async verify(authority: string) {
     try {
       const transaction = await this.walletRepo.findOneBy({
-        authority
-       });
-       
-   
-       if (!transaction) throw new NotFoundException(walletMessage.TRANSACTION_NOT_FOUND);
-   
-       const user = await this.userService.findOne(transaction.userId);
-       if (!user) throw new NotFoundException(userMessages.USER_NOT_FOUND);
-   
-       const data = await this.zarinpal.verifyPayment(
-         transaction.authority,
-         transaction.amount,
-       );
-   
-       if (data.code === 100) {
-         const queryRunner = this.dataSource.createQueryRunner();
-         await queryRunner.connect();
-   
-         try {
-           await queryRunner.startTransaction();
-   
-           const newBalance =
-             Number(user.balance ?? 0) + Number(transaction.amount);
-   
-           await queryRunner.manager.update(
-             UserEntity,
-             { id: user.id },
-             { balance: newBalance },
-           );
-           await queryRunner.manager.update(
-             Wallet,
-             { id: transaction.id },
-             { isPaid: true },
-           );
-   
-           await queryRunner.commitTransaction();
-   
-           return {
-             message: walletMessage.TRANSACTION_SUCCESS,
-             ref_id: data.ref_id,
-             invoice_number : transaction.invoice_number,
-             newBalance : Number(newBalance).toLocaleString('en-US')
-           };
-         } catch (err) {
-           // rollback فقط اگر تراکنش شروع شده باشد
-           if (queryRunner.isTransactionActive) {
-             await queryRunner.rollbackTransaction();
-           }
-           throw new BadRequestException(walletMessage.TRANSACTION_DB_ERROR);
-         } finally {
-           await queryRunner.release();
-         }
-       }
-   
-       return { message: walletMessage.TRANSACTION_ERROR };
+        authority,
+      });
+
+      if (!transaction)
+        throw new NotFoundException(walletMessage.TRANSACTION_NOT_FOUND);
+
+      const user = await this.userService.findOne(transaction.userId);
+      if (!user) throw new NotFoundException(userMessages.USER_NOT_FOUND);
+
+      const data = await this.zarinpal.verifyPayment(
+        transaction.authority,
+        transaction.amount,
+      );
+
+      if (data.code === 100) {
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+
+        try {
+          await queryRunner.startTransaction();
+
+          const newBalance =
+            Number(user.balance ?? 0) + Number(transaction.amount);
+
+          await queryRunner.manager.update(
+            UserEntity,
+            { id: user.id },
+            { balance: newBalance },
+          );
+          await queryRunner.manager.update(
+            Wallet,
+            { id: transaction.id },
+            { isPaid: true },
+          );
+
+          await queryRunner.commitTransaction();
+
+          return {
+            message: walletMessage.TRANSACTION_SUCCESS,
+            ref_id: data.ref_id,
+            invoice_number: transaction.invoice_number,
+            newBalance: Number(newBalance).toLocaleString('en-US'),
+          };
+        } catch (err) {
+          // rollback فقط اگر تراکنش شروع شده باشد
+          if (queryRunner.isTransactionActive) {
+            await queryRunner.rollbackTransaction();
+          }
+          throw new BadRequestException(walletMessage.TRANSACTION_DB_ERROR);
+        } finally {
+          await queryRunner.release();
+        }
+      }
+
+      return { message: walletMessage.TRANSACTION_ERROR };
     } catch (error) {
       console.log(error);
-      throw new BadRequestException(error)
-      
+      throw new BadRequestException(error);
     }
   }
 
-  async withdraw(withdrawDto: CreateWithdreawDto) {
-    const { mobile, amount } = withdrawDto;
+  async withdraw(withdrawDto: CreateWithdreawDto , userId : number) {
+    const { amount } = withdrawDto;
 
-    const user = await this.userService.findOrCreateUser({ mobile });
+    const user = await this.userRepo.findOne({where : {id : userId}});
+
+    if (!user) throw new NotFoundException(userMessages.USER_NOT_FOUND)
+
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -134,9 +145,11 @@ export class WalletService {
       });
       if (!userData) throw new NotFoundException(userMessages.USER_NOT_FOUND);
       if ((userData.balance ?? 0) < amount)
-        throw new BadRequestException(walletMessage.INSUFFICIENT_BALANCE_WALLET);
+        throw new BadRequestException(
+          walletMessage.INSUFFICIENT_BALANCE_WALLET,
+        );
 
-      const invoiceNumber = Math.floor(1000 + Math.random() * 9000).toString()
+      const invoiceNumber = Math.floor(1000 + Math.random() * 9000).toString();
       const newBalance = userData.balance - amount;
 
       await queryRunner.manager.update(
@@ -158,10 +171,10 @@ export class WalletService {
         message: walletMessage.WITHDRAW_SUCCESSFULL,
         data: {
           userId: user.id,
-          amount : String(`-${amount}`),
+          amount: String(`-${amount}`),
           oldBalance: Number(userData.balance).toLocaleString('en-US'),
-          newBalance : Number(newBalance).toLocaleString('en-US'),
-          invoiceNumber
+          newBalance: Number(newBalance).toLocaleString('en-US'),
+          invoiceNumber,
         },
       };
     } catch (error) {
@@ -171,4 +184,6 @@ export class WalletService {
       await queryRunner.release();
     }
   }
+
+  
 }

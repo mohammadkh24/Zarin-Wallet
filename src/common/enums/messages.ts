@@ -4,7 +4,8 @@ export enum walletMessage {
     TRANSACTION_DB_ERROR = 'خطا در ثبت تراکنش در دیتابیس',
     TRANSACTION_ERROR = 'پرداخت ناموفق بود',
     INSUFFICIENT_BALANCE_WALLET = 'موجودی کیف پول شما کافی نیست',
-    WITHDRAW_SUCCESSFULL = 'برداشت با موفقیت انجام شد'
+    WITHDRAW_SUCCESSFULL = 'برداشت با موفقیت انجام شد',
+    TRANSACTION_REMOVED = 'تراکنش با موفقیت حذف شد'
 }
 
 export enum AuthMessage {
@@ -30,4 +31,8 @@ export enum userMessages {
     USER_NOT_FOUND = 'کاربر یافت نشد',
     USER_ROLE_CHANGED = 'نقش کاربر با موفقیت آپدیت شد',
     USER_REMOVED = 'کاربر با موفقیت حذف شد'
+}
+
+export enum ServerMessage {
+    SERVER_ERROR = 'خطای سرور'
 }

@@ -1,4 +1,6 @@
+import { IsNumber, IsString } from "class-validator"
+
 export class CreateDepositDto {
-    mobile : string
+    @IsNumber()
     amount : number
 }

@@ -8,6 +8,7 @@ import { TypeOrmDbConfig } from './config/typeorm-db-config';
 import { AuthModule } from './modules/auth/auth.module';
 import { JwtModule } from '@nestjs/jwt';
 import { SmsModule } from './modules/sms/sms.module';
+import { TransactionsModule } from './modules/transactions/transactions.module';
 
 @Module({
   imports: [
@@ -26,7 +27,8 @@ import { SmsModule } from './modules/sms/sms.module';
     WalletModule,
     AuthModule,
     JwtModule,
-    SmsModule
+    SmsModule,
+    TransactionsModule
   ],
 })
 export class AppModule {}
