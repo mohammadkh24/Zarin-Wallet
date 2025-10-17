@@ -15,9 +15,9 @@ export class TypeOrmDbConfig implements TypeOrmOptionsFactory {
       password: this.configService.get<string>('db.password'),
       database: this.configService.get<string>('db.database'),
       synchronize: true,
-      // ssl: {
-      //   rejectUnauthorized: false,
-      // },
+      ssl: {
+        rejectUnauthorized: false,
+      },
       // entities: [
       //   'dist/**/**/**/*.entity{.ts,.js}',
       //   'dist/**/**/*.entity{.ts,.js}',
