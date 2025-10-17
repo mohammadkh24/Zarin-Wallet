@@ -14,6 +14,18 @@ async function bootstrap() {
 
   const port = configService.get('app.port');
 
+  app.enableCors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'Origin',
+      'X-Requested-With',
+    ],
+    credentials: true, // اگر کوکی می‌خوای بفرستی
+  });
   
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
